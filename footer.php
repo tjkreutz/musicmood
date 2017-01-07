@@ -1,0 +1,1 @@
+<div id="footer">Copyright &copy; 2013 Bo Blankers, David de Kleer, Tim Kreutz, Tom Bouwhuis |  Rijksuniversiteit Groningen </div>
