@@ -127,22 +127,27 @@ function evalAttempt($db_handle, $trusted_user)
     // check if a user with current IP has submitted something earlier
     $q_handle = $db_handle->prepare("select user_ip, attempt from login_attempts where user_ip = ?");
     $ip = ip2long($_SERVER["REMOTE_ADDR"]);
+
+    if (!$ip) {
+        return 0;
+    }
+
     $q_handle->bindParam(1, $ip);
     $q_handle->execute();
     $arr = $q_handle->fetch(PDO::FETCH_ASSOC);
-    
+
     if (empty($arr["user_ip"])) // this IP is unknown, put it into the database
     {
         $q_handle = $db_handle->prepare("insert into login_attempts values(?,?)");
         $q_handle->bindParam(1, $ip);
-        
+
         if ($trusted_user) // user provided right login data, reset attempts
         {
             $q_handle->bindValue(2, 0, PDO::PARAM_INT);
             $q_handle->execute();
             return 0;
-        }   
-        
+        }
+
         $q_handle->bindValue(2, 1, PDO::PARAM_INT); // first login attempt
         $q_handle->execute();
     }
@@ -150,18 +155,18 @@ function evalAttempt($db_handle, $trusted_user)
     {
         if ($arr["attempt"] == 5 && !$trusted_user) // beyond 5 login attempts: turn Captcha on
             return 1;
-        
+
         // increment the attempt (or reset attempt for trusted users)
         $q_handle = $db_handle->prepare("update login_attempts set attempt = ? where user_ip = ?");
-        
+
         if ($trusted_user) // user provided right correct data, reset attempts
         {
             $q_handle->bindValue(1, 0, PDO::PARAM_INT);
             $q_handle->bindParam(2, $ip);
             $q_handle->execute();
             return 0;
-        } 
-        
+        }
+
         $q_handle->bindValue(1, ++$arr["attempt"], PDO::PARAM_INT);
         $q_handle->bindParam(2, $ip);
         $q_handle->execute();
